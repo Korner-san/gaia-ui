@@ -1,0 +1,13 @@
+{
+  "generator": "built-in image_gen",
+  "assets": [
+    {
+      "path": "assets/roasted-vegetables.png",
+      "prompt": "Use case: product-mockup. Asset type: square restaurant menu image for a small circular screen. Create exquisite photorealistic editorial food photography of a single round ivory ceramic plate of beautifully roasted seasonal vegetables: colorful carrots, zucchini, sweet red peppers and golden cauliflower, lightly caramelized, served with lemon wedges and delicate fresh green herbs. Three-quarter overhead viewpoint, the entire plate centered and fully inside a central circular safe area with generous margin, no cropping of plate. Warm soft natural light, appetizing real texture, premium Mediterranean restaurant presentation. Clean nearly-white cream seamless background #fcf9f2, subtle soft contact shadow. Nothing else in the scene. Strong legibility at thumbnail size. No text, no logos, no utensils, no table clutter."
+    },
+    {
+      "path": "assets/water-selection.png",
+      "prompt": "Use case: product-mockup. Asset type: square restaurant menu image for a small circular screen. Create exquisite photorealistic editorial beverage photography of two elegant short clear water tumblers side by side, one of pristine chilled still water on the left and one of sparkling water with visibly rising fine bubbles on the right. Beautiful realistic clear glass, restrained condensation, freshly chilled. A tiny lemon wedge beside the sparkling glass. Both glasses entirely visible together in the central circular safe area with generous margins. A slightly elevated three-quarter viewpoint. Warm soft natural light and premium Mediterranean restaurant styling, clean nearly-white cream seamless background #fcf9f2, subtle soft contact shadows. No bottles, no hands, no text or labels, no logos, no other table clutter. Appetizing and immediately recognizable at small thumbnail size."
+    }
+  ]
+}

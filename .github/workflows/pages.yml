@@ -1,4 +1,4 @@
-name: Deploy GAIA UI to GitHub Pages
+name: Deploy GAIA UI and refresh download
 
 on:
   push:
@@ -7,35 +7,89 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  package:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Restore legacy assets and build current ZIP
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import zipfile
+
+          # One-time migration: older uploads kept these images only in the ZIP.
+          for name in ("roasted-vegetables.png", "water-selection.png"):
+              path = Path("assets") / name
+              if not path.exists():
+                  with zipfile.ZipFile("gaia-ui.zip") as legacy:
+                      data = legacy.read(path.as_posix())
+                  path.parent.mkdir(parents=True, exist_ok=True)
+                  path.write_bytes(data)
+              assert path.stat().st_size > 0, path
+
+          tracked = subprocess.check_output(["git", "ls-files", "-z"]).decode().split("\0")
+          files = {Path(name) for name in tracked if name and name != "gaia-ui.zip"}
+          files.update(path for path in Path("assets").rglob("*") if path.is_file())
+          # Stable ordering and timestamps avoid commits when source is unchanged.
+          with zipfile.ZipFile("gaia-ui.zip", "w", compression=zipfile.ZIP_DEFLATED) as archive:
+              for path in sorted(files):
+                  if path.is_file():
+                      info = zipfile.ZipInfo(path.as_posix(), date_time=(1980, 1, 1, 0, 0, 0))
+                      info.compress_type = zipfile.ZIP_DEFLATED
+                      info.external_attr = 0o100644 << 16
+                      archive.writestr(info, path.read_bytes())
+          with zipfile.ZipFile("gaia-ui.zip") as archive:
+              assert archive.testzip() is None
+              for path in files:
+                  if path.is_file():
+                      assert archive.read(path.as_posix()) == path.read_bytes(), path
+          print("Verified ZIP matches all current source files and images.")
+          PY
+      - name: Replace repository ZIP when changed
+        shell: bash
+        run: |
+          git add gaia-ui.zip assets/
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Refresh current GAIA download [skip ci]"
+            git push origin HEAD:main
+          fi
+
+  deploy:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
+      - name: Checkout current packaged version
         uses: actions/checkout@v4
+        with:
+          ref: main
       - name: Prepare website and images
         shell: bash
         run: |
-          mkdir -p _site/assets
+          mkdir -p _site
           cp index.html _site/index.html
-          for asset in roasted-vegetables.png water-selection.png; do
-            if [ -f "assets/$asset" ]; then
-              cp "assets/$asset" "_site/assets/$asset"
-            else
-              unzip -p gaia-ui.zip "assets/$asset" > "_site/assets/$asset"
-            fi
-            test -s "_site/assets/$asset"
-          done
+          cp -R assets _site/assets
           touch _site/.nojekyll
       - name: Configure Pages
         uses: actions/configure-pages@v5

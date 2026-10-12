@@ -32,6 +32,17 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}
 .menu-preview img{display:block;width:100%;height:100%;object-fit:contain;transform:scale(.94)}
 [data-state="speaking"][data-item-ready="true"] .menu-preview{opacity:1;transform:scale(1)}
 [data-state="speaking"][data-item-ready="true"] .wave{opacity:0}
+/* Image focus layout; normal geometry returns when the preview is cleared. */
+.brand{transition:top .6s cubic-bezier(.22,.7,.2,1)}
+.brand-name{transition:font-size .6s ease,letter-spacing .6s ease}
+.brand-tagline{transition:opacity .2s ease,visibility .2s ease}
+.halo{transition:width .6s cubic-bezier(.22,.7,.2,1),top .6s cubic-bezier(.22,.7,.2,1)}
+[data-state="speaking"][data-item-ready="true"] .halo{width:60%;top:43%}
+[data-state="speaking"][data-item-ready="true"] .brand{top:7.5%}
+[data-state="speaking"][data-item-ready="true"] .brand-name{font-size:3.3cqw;letter-spacing:.85cqw}
+[data-state="speaking"][data-item-ready="true"] .brand-tagline{opacity:0;visibility:hidden}
+[data-state="speaking"][data-item-ready="true"] #caption .caption-arc{font-size:32px}
+[data-state="speaking"][data-item-ready="true"] .status .caption-arc{font-size:16px;letter-spacing:1.8px}
 .leaf{inset:28%;color:#a7885c}
 .mic{inset:34%}
 [data-state="listening"] .ring{animation:ringListen 2s ease-in-out infinite}
@@ -116,14 +127,14 @@ const menuItems={
  vegetables:{src:'assets/roasted-vegetables.png',alt:'Roasted vegetables on an ivory plate with lemon and fresh herbs'},
  water:{src:'assets/water-selection.png',alt:'Still and sparkling water in two chilled glasses'}
 };
-const menuImage=$('menu-image');let previewKey=null;
+const menuImage=$('menu-image');let previewKey=null,currentCaption='';
 function updatePreview(item){
  previewKey=state==='speaking'&&menuItems[item]?item:null;
  screen.dataset.itemReady='false';
  if(!previewKey)return;
  const key=previewKey,entry=menuItems[key];
- menuImage.onload=()=>{if(previewKey===key&&state==='speaking')screen.dataset.itemReady='true'};
- menuImage.onerror=()=>{if(previewKey===key)screen.dataset.itemReady='false'};
+ menuImage.onload=()=>{if(previewKey===key&&state==='speaking'){screen.dataset.itemReady='true';setCaption(currentCaption)}};
+ menuImage.onerror=()=>{if(previewKey===key){screen.dataset.itemReady='false';setCaption(currentCaption)}};
  menuImage.alt=entry.alt;
  if(menuImage.getAttribute('src')!==entry.src)menuImage.src=entry.src;
  if(menuImage.complete&&menuImage.naturalWidth>0)screen.dataset.itemReady='true';
@@ -154,27 +165,28 @@ const messages={idle:['How may I\nhelp you?','Touch to begin'],listening:['I’m
 function clearTimers(){timers.forEach(clearTimeout);timers=[]}
 function after(fn,ms){timers.push(setTimeout(fn,ms))}
 const measure=document.createElement('canvas').getContext('2d');
-measure.font='36px Georgia';
-function captionLines(text){
+function captionLines(text,preview=false){
+ measure.font=preview?'32px Georgia':'36px Georgia';
+ const maxWidth=preview?500:420;
  const lines=[];let line='';
  for(const word of text.trim().split(/\s+/)){
   const candidate=line?line+' '+word:word;
-  if(measure.measureText(candidate).width<=420){line=candidate;continue}
+  if(measure.measureText(candidate).width<=maxWidth){line=candidate;continue}
   if(line){lines.push(line);line=''}
   for(const char of Array.from(word)){
-   if(line&&measure.measureText(line+char).width>420){lines.push(line);line=''}
+   if(line&&measure.measureText(line+char).width>maxWidth){lines.push(line);line=''}
    line+=char;
   }
  }
  if(line)lines.push(line);return lines;
 }
-function renderArcs(target,lines,firstRadius){
+function renderArcs(target,lines,firstRadius,centerY=470,lineSpacing=46){
  const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
  svg.setAttribute('viewBox','0 0 1000 1000');svg.setAttribute('class','caption-arc');svg.setAttribute('aria-hidden','true');
  const defs=document.createElementNS(ns,'defs');svg.append(defs);
  lines.forEach((line,i)=>{
-  const radius=firstRadius+i*46,id=target.id+'-curve-'+i,halfAngle=Math.PI/3;
-  const dx=radius*Math.sin(halfAngle),y=470+radius*Math.cos(halfAngle);
+  const radius=firstRadius+i*lineSpacing,id=target.id+'-curve-'+i,halfAngle=Math.PI/3;
+  const dx=radius*Math.sin(halfAngle),y=centerY+radius*Math.cos(halfAngle);
   const path=document.createElementNS(ns,'path');path.id=id;
   // True lower circular arc, concentric with the central ring: a visible smile.
   path.setAttribute('d',`M ${500-dx} ${y} A ${radius} ${radius} 0 0 0 ${500+dx} ${y}`);defs.append(path);
@@ -185,16 +197,17 @@ function renderArcs(target,lines,firstRadius){
  target.replaceChildren(accessible,svg);
 }
 function setCaption(text){
- const lines=captionLines(text);
- // Center the complete text block between the central ring (radius 170)
- // and the lower outer edge (radius 530 from the halo center).
- // A larger radius also makes the smile gentler without flattening it.
- const textBandCenter=350,lineSpacing=46,statusGap=48,captionHeight=36;
+ currentCaption=text;
+ const preview=state==='speaking'&&screen.dataset.itemReady==='true';
+ const lines=captionLines(text,preview);
+ // Keep the copy in the open band below the ring in either layout.
+ const centerY=preview?430:470,textBandCenter=preview?400:350;
+ const lineSpacing=preview?42:46,statusGap=preview?44:48,captionHeight=preview?32:36;
  const firstRadius=textBandCenter-((lines.length-1)*lineSpacing+statusGap-captionHeight)/2;
- renderArcs(caption,lines,firstRadius);
+ renderArcs(caption,lines,firstRadius,centerY,lineSpacing);
  const statusRadius=firstRadius+(lines.length-1)*lineSpacing+statusGap;
- renderArcs(status,[messages[state][1]],statusRadius);
- pages.style.top=((470+statusRadius+27)/10)+'%';
+ renderArcs(status,[messages[state][1]],statusRadius,centerY,lineSpacing);
+ pages.style.top=((centerY+statusRadius+27)/10)+'%';
  caption.classList.remove('fade');void caption.offsetWidth;caption.classList.add('fade');
 }
 function setState(next,text,item=null){state=next;updatePreview(item);screen.dataset.state=next;icons.forEach(el=>el.classList.toggle('active',el.dataset.icon===next));setCaption(text||messages[next][0]);pages.replaceChildren();screen.setAttribute('aria-label','GAIA: '+next+'. '+(text||messages[next][0])+'. Touch to interact. Press D for demo controls.')}
@@ -204,8 +217,9 @@ function speak(chunks){
  cancelFlow();const token=flowId;
  chunks=chunks.flatMap(entry=>{
   const segment=typeof entry==='string'?{text:entry,item:null}:entry;
-  const lines=captionLines(segment.text),result=[];
-  for(let i=0;i<lines.length;i+=3)result.push({text:lines.slice(i,i+3).join(' '),item:segment.item});
+  const preview=!!menuItems[segment.item],limit=preview?2:3;
+  const lines=captionLines(segment.text,preview),result=[];
+  for(let i=0;i<lines.length;i+=limit)result.push({text:lines.slice(i,i+limit).join(' '),item:segment.item});
   return result;
  });
  let index=0;

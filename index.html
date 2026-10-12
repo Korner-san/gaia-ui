@@ -34,16 +34,13 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}
 [data-state="speaking"][data-item-ready="true"] .wave{opacity:0}
 .leaf{inset:28%;color:#a7885c}
 .mic{inset:34%}
-.stop-listening{display:none;position:absolute;z-index:3;left:50%;top:47%;transform:translate(-50%,-50%);min-width:23cqw;min-height:64px;padding:2.3cqw 1.6cqw;flex-direction:column;align-items:center;justify-content:center;gap:1.4cqw;border:1px solid #b3936266;border-radius:2.5cqw;background:#fffaf2;color:#785932;font-size:max(12px,1.8cqw);box-shadow:0 .4cqw 2cqw #a17a3012;touch-action:manipulation}
-.stop-listening::before{content:"";display:block;width:2.6cqw;height:2.6cqw;min-width:12px;min-height:12px;border-radius:.4cqw;background:#aa8050}
-.stop-listening:focus-visible{outline:3px solid #ad8043;outline-offset:4px}
-[data-state="listening"] .stop-listening{display:flex}
-[data-state="listening"] .mic{visibility:hidden}
+[data-state="listening"] .ring{animation:ringListen 2s ease-in-out infinite}
+[data-state="listening"] .mic{animation:listen 1.6s ease-in-out infinite}
+@keyframes ringListen{50%{transform:scale(1.035)}}
+@keyframes listen{50%{opacity:.68;transform:scale(.97)}}
 .dots{gap:1.6cqw}.dots i{display:block;width:1.55cqw;height:1.55cqw;border-radius:50%;background:#ac8a58}
 .wave{gap:1.05cqw}.wave i{display:block;width:.8cqw;height:7cqw;border-radius:1cqw;background:linear-gradient(#ceb789,#a48658);transform:scaleY(.4)}
 .wave i:nth-child(2),.wave i:nth-child(6){height:10cqw}.wave i:nth-child(3),.wave i:nth-child(5){height:13cqw}.wave i:nth-child(4){height:15cqw}
-[data-state="listening"] .ring{animation:ringListen 2s ease-in-out infinite}
-[data-state="listening"] .mic{animation:listen 1.6s ease-in-out infinite}
 [data-state="thinking"] .orbit{opacity:.75;animation:spin 2.2s linear infinite}
 [data-state="thinking"] .dots i{animation:dot 1.3s ease-in-out infinite}
 .dots i:nth-child(2){animation-delay:.16s}.dots i:nth-child(3){animation-delay:.32s}
@@ -62,8 +59,6 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}
 #ripple{position:absolute;border:1px solid #ae875673;width:8%;height:8%;margin:-4% 0 0 -4%;border-radius:50%;opacity:0;pointer-events:none}
 #ripple.show{animation:ripple .8s ease-out}
 @keyframes ambientBreath{0%,100%{opacity:.58}50%{opacity:.95}}
-@keyframes ringListen{50%{transform:scale(1.035)}}
-@keyframes listen{50%{opacity:.68;transform:scale(.97)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes dot{50%{transform:translateY(-1cqw);opacity:.45}}
 @keyframes wave{to{transform:scaleY(1)}}
@@ -88,7 +83,6 @@ dialog::backdrop{background:#0009}dialog h2{font:27px Georgia,serif;margin:0 0 8
       <div class="icon" data-icon="complete"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m27 52 16 16 32-37"/></svg></div>
       <div class="icon" data-icon="unavailable"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M35 34v32M65 34v32"/></svg></div>
     </div>
-    <button id="stop-listening" class="stop-listening" type="button" aria-label="Stop listening and close the microphone">Stop listening</button>
     <section class="copy" aria-live="polite" aria-atomic="true"><p id="caption">How may I<br>help you?</p><div id="status" class="status">Touch to begin</div><div id="pages" class="page-dots" aria-hidden="true"></div></section>
     <div class="touch-cue" aria-hidden="true"></div>
   </div>
@@ -96,22 +90,17 @@ dialog::backdrop{background:#0009}dialog h2{font:27px Georgia,serif;margin:0 0 8
 </main>
 <dialog id="panel" aria-labelledby="panel-title">
   <button class="close" id="close" aria-label="Close demo controls">×</button><h2 id="panel-title">GAIA studio</h2>
-  <p>Voice demo · microphone input and spoken captions use your browser’s speech features. Responses follow the sample menu; no AI service or ordering system is connected. Food and drink images are AI-generated concept previews.</p>
-  <div class="controls"><button class="primary" id="talk">Talk to GAIA</button><button id="play">Play simulation</button><button id="reset">Reset to front</button><button id="fullscreen">Full screen</button></div>
-  <label><input type="checkbox" id="voice-enabled" checked>Speak GAIA’s captions</label>
-  <label for="voice-choice">GAIA’s voice</label><select id="voice-choice"><option value="">Automatic English voice</option></select>
-  <div class="controls" style="margin-top:8px"><button id="voice-test">Test voice</button><button id="stop">Stop voice &amp; microphone</button></div>
-  <label><input type="checkbox" id="mic-enabled" checked>Use microphone when I tap GAIA</label>
-  <small id="voice-support">Microphone audio may be sent to your browser’s speech service. GAIA does not store recordings. Listening stops after each request.</small>
-  <label for="request">Or type your request</label><input id="request" type="text" maxlength="300" placeholder="Can you recommend something light?">
+  <p>Visual demo · tap to explore, play a simulation, or type a request. Responses follow the sample menu; no AI service or ordering system is connected. Food and drink images are AI-generated concept previews.</p>
+  <div class="controls"><button class="primary" id="play">Play simulation</button><button id="reset">Reset to front</button><button id="fullscreen">Full screen</button></div>
+  <label for="request">Type your request</label><input id="request" type="text" maxlength="300" placeholder="Can you recommend something light?">
   <div class="controls" style="margin-top:8px"><button id="request-send">Ask GAIA</button></div><p id="heard" role="status"></p>
   <label>Preview a state</label><div class="controls" id="states"><button data-preview="idle">Idle</button><button data-preview="listening">Listening</button><button data-preview="thinking">Thinking</button><button data-preview="speaking">Speaking</button><button data-preview="complete">Complete</button><button data-preview="unavailable">Unavailable</button></div>
   <label>Preview a recommendation</label><div class="controls" id="recommendations"><button data-demo="1">Roasted vegetables</button><button data-demo="2">Still &amp; sparkling water</button></div>
   <label>Face a diner</label><div class="controls" id="directions"><button data-angle="0">Front</button><button data-angle="-90">Right</button><button data-angle="180">Back</button><button data-angle="90">Left</button></div>
   <label for="custom">Try your own agent response</label><textarea id="custom" maxlength="1200" placeholder="Welcome. What can I help you with this evening?"></textarea>
-  <div class="controls" style="margin-top:8px"><button id="custom-play">Preview with voice</button></div>
+  <div class="controls" style="margin-top:8px"><button id="custom-play">Preview response</button></div>
   <p id="notice" role="status"></p>
-  <small>D: controls · F: full screen · R: reset · Space: start.<br>Touch anywhere inside the circle to face that position. Touch while GAIA speaks to interrupt and listen again. Press Escape to stop voice and microphone. The name, icon, and captions turn together toward every touch. Only an exact center touch keeps the current direction.<br><br>On touch-only displays, hold the center for 1.2 seconds to open these controls.<br>Provisional square canvas, circular mask. This is not a calibrated five-inch physical size. The exact display resolution and touch mapping will be set when the screen model is available.</small>
+  <small>D: controls · F: full screen · R: reset · Space: start.<br>Touch anywhere inside the circle to face that position. Touch during a response to restart the simulation. Press Escape to stop the simulation. The name, icon, and captions turn together toward every touch. Only an exact center touch keeps the current direction.<br><br>On touch-only displays, hold the center for 1.2 seconds to open these controls.<br>Provisional square canvas, circular mask. This is not a calibrated five-inch physical size. The exact display resolution and touch mapping will be set when the screen model is available.</small>
 </dialog>
 <script>
 (()=>{'use strict';
@@ -139,64 +128,14 @@ function updatePreview(item){
  if(menuImage.getAttribute('src')!==entry.src)menuImage.src=entry.src;
  if(menuImage.complete&&menuImage.naturalWidth>0)screen.dataset.itemReady='true';
 }
-const synth=window.speechSynthesis;
-const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-let flowId=0,speechId=0,recognition=null,audioUnlocked=false,hasGreeted=false,voiceEnabled=true,currentUtterance=null;
-const voiceChoice=$('voice-choice');
-function populateVoices(){
- const selected=voiceChoice.value;voiceChoice.replaceChildren();
- const automatic=document.createElement('option');automatic.value='';automatic.textContent='Automatic English voice';voiceChoice.append(automatic);
- if(synth)for(const voice of synth.getVoices().filter(v=>/^en(?:-|$)/i.test(v.lang))){const option=document.createElement('option');option.value=voice.voiceURI;option.textContent=voice.name+' · '+voice.lang;voiceChoice.append(option)}
- voiceChoice.value=selected;
-}
-function chooseVoice(){
- if(!synth)return null;const voices=synth.getVoices();
- return voices.find(v=>v.voiceURI===voiceChoice.value)||voices.find(v=>/^en/i.test(v.lang)&&/Samantha|Aria|Jenny|Zira|Susan|Google UK English Female/i.test(v.name))||voices.find(v=>/^en/i.test(v.lang)&&v.default)||voices.find(v=>/^en/i.test(v.lang))||null;
-}
-function stopRecognition(){const active=recognition;recognition=null;if(active){active.onresult=active.onerror=active.onend=active.onstart=null;try{active.abort()}catch{}}}
-function stopSpeech(){speechId++;currentUtterance=null;if(synth)synth.cancel()}
-function cancelFlow(){flowId++;clearTimers();stopRecognition();stopSpeech()}
+// Visual-only mode: captions advance on a reading timer; no audio or microphone APIs.
+let flowId=0,hasGreeted=false;
+function cancelFlow(){flowId++;clearTimers()}
 function say(text,done=()=>{},token=flowId){
- stopSpeech();const id=speechId,spoken=text.replace(/\s+/g,' ').trim();
- const fallback=Math.max(1600,spoken.split(/\s+/).length*420+400);
- if(!voiceEnabled||!synth||!audioUnlocked){after(()=>{if(token===flowId)done()},fallback);return}
- const utterance=new SpeechSynthesisUtterance(spoken);currentUtterance=utterance;
- const voice=chooseVoice();if(voice)utterance.voice=voice;utterance.lang=voice?.lang||'en-US';utterance.rate=.94;utterance.pitch=1.03;utterance.volume=1;
- let ended=false,startTimer,finishTimer;
- const finish=(failed=false)=>{
-  if(ended||id!==speechId||token!==flowId)return;ended=true;clearTimeout(startTimer);clearTimeout(finishTimer);currentUtterance=null;
-  if(failed){$('notice').textContent='Voice playback is unavailable. Try another voice in GAIA studio.';stopSpeech()}
-  after(()=>{if(token===flowId)done()},failed?fallback:180);
- };
- utterance.onstart=()=>{clearTimeout(startTimer);finishTimer=setTimeout(()=>finish(true),45000);timers.push(finishTimer)};
- utterance.onend=()=>finish();utterance.onerror=()=>finish(true);
- startTimer=setTimeout(()=>finish(true),7000);timers.push(startTimer);
- try{synth.speak(utterance)}catch{finish(true)}
+ const duration=Math.max(1600,text.trim().split(/\s+/).length*420+400);
+ after(()=>{if(token===flowId)done()},duration);
 }
 function announce(next,text,item,done,token=flowId){if(token!==flowId)return;setState(next,text,item);say(text||messages[next][0],done,token)}
-function inputFallback(message){
- cancelFlow();setState('unavailable',message);say(message);
- $('heard').textContent=message;if(!panel.open)panel.showModal();$('request').focus();
-}
-function listen(token){
- if(token!==flowId)return;
- if(!Recognition){inputFallback('Please type your request in GAIA studio.');return}
- const rec=new Recognition();recognition=rec;rec.lang='en-US';rec.interimResults=false;rec.continuous=false;rec.maxAlternatives=1;
- let received=false,timeout=setTimeout(()=>{if(token===flowId)inputFallback('The microphone didn’t start. Please try again.')},12000);timers.push(timeout);
- rec.onstart=()=>{if(token!==flowId)return;clearTimeout(timeout);$('heard').textContent='Listening…';timeout=setTimeout(()=>{if(token===flowId)inputFallback('I didn’t hear a request. Please try again.')},18000);timers.push(timeout)};
- rec.onresult=event=>{
-  if(token!==flowId)return;
-  const text=Array.from(event.results).map(result=>result[0].transcript).join(' ').trim();if(!text)return;
-  received=true;clearTimeout(timeout);stopRecognition();respond(text);
- };
- rec.onerror=event=>{
-  if(token!==flowId||received)return;
-  const messages={ 'not-allowed':'Please allow microphone access, or type your request.', 'service-not-allowed':'Voice input isn’t available here. Please type your request.', 'audio-capture':'I can’t access a microphone. Please type your request.', 'network':'Voice input couldn’t connect. Please type your request.', 'no-speech':'I didn’t hear a request. Please try again.' };
-  inputFallback(messages[event.error]||'Please try again, or type your request.');
- };
- rec.onend=()=>{clearTimeout(timeout);if(recognition===rec)recognition=null;if(token===flowId&&!received)inputFallback('I didn’t catch that. Please try again.')};
- try{rec.start()}catch{inputFallback('Voice input isn’t available here. Please type your request.')}
-}
 function responseFor(text){
  const q=text.toLowerCase();
  if(/allerg|gluten|nut.free|dairy.free/.test(q))return ['Please check ingredients and allergies with your server.','This demo cannot confirm that a dish is safe for you.'];
@@ -208,12 +147,9 @@ function responseFor(text){
  return ['I can show you roasted vegetables or our water selection.','What would you like to explore?'];
 }
 function respond(text){
- cancelFlow();audioUnlocked=true;$('heard').textContent='You said: '+text;const token=flowId;
+ cancelFlow();$('heard').textContent='Your request: '+text;const token=flowId;
  announce('thinking',null,null,()=>speak(responseFor(text)),token);
 }
-populateVoices();if(synth)synth.addEventListener('voiceschanged',populateVoices);
-if(!Recognition)$('voice-support').textContent='Microphone recognition is unavailable in this browser. Use the typed request or Play simulation. Your device’s available voices provide speech.';
-if(!synth){$('voice-support').textContent+=' Spoken audio is unavailable in this browser.';$('voice-enabled').disabled=true;}
 const messages={idle:['How may I\nhelp you?','Touch to begin'],listening:['I’m listening.','Go ahead'],thinking:['One moment.','Thinking'],speaking:['It’s lovely to have you here.','GAIA is speaking'],complete:['Anything else?','Touch to continue'],unavailable:['A moment, please.','Touch to try again']};
 function clearTimers(){timers.forEach(clearTimeout);timers=[]}
 function after(fn,ms){timers.push(setTimeout(fn,ms))}
@@ -265,7 +201,7 @@ function setState(next,text,item=null){state=next;updatePreview(item);screen.dat
 function face(target){let delta=((target-angle+180)%360+360)%360-180;angle+=delta;orientation.style.transform='rotate('+angle+'deg)'}
 function showPages(index,count){pages.replaceChildren();if(count>1)for(let i=0;i<count;i++){let dot=document.createElement('b');dot.className=i===index?'current':'';pages.append(dot)}}
 function speak(chunks){
- cancelFlow();audioUnlocked=true;const token=flowId;
+ cancelFlow();const token=flowId;
  chunks=chunks.flatMap(entry=>{
   const segment=typeof entry==='string'?{text:entry,item:null}:entry;
   const lines=captionLines(segment.text),result=[];
@@ -281,15 +217,12 @@ function speak(chunks){
  }
  next();
 }
-function start(forceDemo=false){
- cancelFlow();audioUnlocked=true;const token=flowId;
- const begin=()=>announce('listening',null,null,()=>{
-  if(forceDemo||!$('mic-enabled').checked){announce('thinking',null,null,()=>speak(samples[exampleIndex++%samples.length]),token)}
-  else listen(token);
- },token);
+function start(){
+ cancelFlow();const token=flowId;
+ const begin=()=>announce('listening',null,null,()=>announce('thinking',null,null,()=>speak(samples[exampleIndex++%samples.length]),token),token);
  if(!hasGreeted){hasGreeted=true;announce('idle',null,null,begin,token)}else begin();
 }
-function reset(){cancelFlow();face(0);setState('idle');if(audioUnlocked)say(messages.idle[0])}
+function reset(){cancelFlow();face(0);setState('idle')}
 function openPanel(){cancelFlow();setState('idle');if(!panel.open)panel.showModal()}
 function closePanel(){panel.close();screen.focus({preventScroll:true})}
 function chunkText(text){const words=text.trim().split(/\s+/),chunks=[];let current='';for(const original of words){const parts=original.match(/.{1,22}/gu)||[];for(const word of parts){if(current&&(current+' '+word).length> fiftyEight){chunks.push(current);current=''}current+=(current?' ':'')+word}}if(current)chunks.push(current);return chunks}
@@ -300,11 +233,8 @@ screen.addEventListener('pointerdown',e=>{if(e.button!==0||!e.isPrimary)return;c
 screen.addEventListener('pointermove',e=>{if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>15)clearTimeout(holdTimer)});
 screen.addEventListener('pointerup',e=>{clearTimeout(holdTimer);if(!press||press.id!==e.pointerId)return;let p=press;press=null;if(!p.held&&Math.hypot(e.clientX-p.x,e.clientY-p.y)<30)touchAt(p.x,p.y)});
 screen.addEventListener('pointercancel',()=>{clearTimeout(holdTimer);press=null});
-const stopListening=$('stop-listening');
-for(const event of ['pointerdown','pointerup','pointercancel'])stopListening.addEventListener(event,e=>e.stopPropagation());
-stopListening.onclick=e=>{e.stopPropagation();clearTimeout(holdTimer);press=null;cancelFlow();setState('idle');$('heard').textContent='Listening stopped.';screen.focus({preventScroll:true})};
-$('close').onclick=closePanel;$('play').onclick=()=>{closePanel();start(true)};$('reset').onclick=()=>{closePanel();reset()};
-$('states').onclick=e=>{const mode=e.target.dataset.preview;if(mode){cancelFlow();audioUnlocked=true;closePanel();announce(mode)}};
+$('close').onclick=closePanel;$('play').onclick=()=>{closePanel();start()};$('reset').onclick=()=>{closePanel();reset()};
+$('states').onclick=e=>{const mode=e.target.dataset.preview;if(mode){cancelFlow();closePanel();announce(mode)}};
 $('recommendations').onclick=e=>{const index=e.target.dataset.demo;if(index!==undefined){closePanel();speak(samples[Number(index)])}};
 $('directions').onclick=e=>{if(e.target.dataset.angle!==undefined){face(Number(e.target.dataset.angle));closePanel()}};
 $('custom-play').onclick=()=>{const text=$('custom').value.trim();if(!text){$('notice').textContent='Enter a response to preview.';return}closePanel();speak(chunkText(text))};
@@ -312,11 +242,6 @@ async function fullscreen(){try{if(document.fullscreenElement)await document.exi
 $('fullscreen').onclick=fullscreen;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){cancelFlow();setState('idle');return}if(e.target.matches('textarea,input,select'))return;if(e.target.closest('button')&&(e.key===' '||e.key==='Enter'))return;const key=e.key.toLowerCase();if(key==='d'){e.preventDefault();panel.open?closePanel():openPanel()}else if(!panel.open){if(key==='f')fullscreen();else if(key==='r')reset();else if(key===' '||key==='enter'){e.preventDefault();start()}}});
 panel.addEventListener('click',e=>{if(e.target===panel){const b=panel.getBoundingClientRect();if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)closePanel()}});
-$('talk').onclick=()=>{closePanel();$('mic-enabled').checked=true;start()};
-$('stop').onclick=()=>{cancelFlow();setState('idle');$('notice').textContent='Voice and microphone stopped.'};
-$('voice-test').onclick=()=>{cancelFlow();audioUnlocked=true;closePanel();announce('speaking','Hello, I’m Gaia. How may I help you?')};
-$('voice-enabled').onchange=e=>{voiceEnabled=e.target.checked;cancelFlow();setState('idle')};
-$('mic-enabled').onchange=()=>{cancelFlow();setState('idle')};
 $('request-send').onclick=()=>{const text=$('request').value.trim();if(!text){$('heard').textContent='Type a request first.';return}closePanel();respond(text)};
 $('request').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('request-send').click()}});
 window.addEventListener('pagehide',cancelFlow);

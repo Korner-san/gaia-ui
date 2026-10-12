@@ -30,6 +30,8 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}
 .icon.active{opacity:1;transform:scale(1)}
 .menu-preview{position:absolute;inset:4%;border-radius:50%;overflow:hidden;opacity:0;transform:scale(.95);transition:opacity .45s ease,transform .6s ease;pointer-events:none}
 .menu-preview img{display:block;width:100%;height:100%;object-fit:contain;transform:scale(1.08)}
+/* Clip this plate preview to its rim so the photographed cast shadow is not displayed. */
+.menu-preview img[src="assets/roasted-vegetables.png"]{clip-path:ellipse(43.8% 41.4% at 50% 48.4%)}
 [data-state="speaking"][data-item-ready="true"] .menu-preview{opacity:1;transform:scale(1)}
 [data-state="speaking"][data-item-ready="true"] .wave{opacity:0}
 /* Image focus layout; normal geometry returns when the preview is cleared. */

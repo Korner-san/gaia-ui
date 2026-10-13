@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="preload" as="image" href="assets/roasted-vegetables.png">
+<link rel="preload" as="image" href="assets/water-selection.png">
+<meta name="theme-color" content="#000000">
+<title>GAIA · Tabletop UI prototype</title>
+<style>
+:root{color-scheme:light;--ink:#65503d;--gold:#bfa478;--ambient:221 150 62;--size:min(92vw,92dvh)}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;background:#000;overflow:hidden}
+body{font-family:Arial,Helvetica,sans-serif;display:grid;place-items:center}
+/* The outer aura is separate from the circular mask and cannot intercept touches. */
+body::before{content:"";position:fixed;left:50%;top:50%;width:calc(var(--size) + 6vmin);height:calc(var(--size) + 6vmin);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle closest-side,transparent 82%,rgb(var(--ambient) / .12) 88%,rgb(var(--ambient) / .58) 92%,rgb(var(--ambient) / .36) 95%,rgb(var(--ambient) / .1) 98%,transparent 100%);filter:blur(.4vmin);opacity:.75;animation:ambientBreath 7s ease-in-out infinite;pointer-events:none}
+button,input,textarea,select{font:inherit}button{cursor:pointer}
+#screen{position:relative;width:var(--size);height:var(--size);border-radius:50%;overflow:hidden;isolation:isolate;touch-action:none;user-select:none;cursor:pointer;container-type:inline-size;background:radial-gradient(ellipse at 40% 30%,#fffefb 0%,#fcf9f2 55%,#f3edde 100%);outline:none;-webkit-tap-highlight-color:transparent}
+#screen:focus-visible{box-shadow:inset 0 0 0 3px #aa8960}
+#screen::before{content:none}
+#screen::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle closest-side,transparent 78%,rgb(var(--ambient) / .025) 82%,rgb(var(--ambient) / .1) 88%,rgb(var(--ambient) / .27) 94%,rgb(var(--ambient) / .5) 98%,rgb(var(--ambient) / .58) 100%);opacity:.75;animation:ambientBreath 7s ease-in-out infinite;pointer-events:none}
+#orientation{position:absolute;inset:0;transition:transform .55s cubic-bezier(.22,.7,.2,1);will-change:transform}
+.brand{position:absolute;top:15.15%;left:15%;width:70%;text-align:center;color:#967957;font-family:Georgia,'Times New Roman',serif;font-weight:400}.brand-name{display:block;font-size:3cqw;letter-spacing:.75cqw;padding-left:.75cqw}.brand-tagline{display:block;margin-top:1.2cqw;font-size:2.4cqw;line-height:1.35;letter-spacing:.1cqw}
+.halo{position:absolute;isolation:isolate;left:50%;top:47%;width:37%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#fffdf8 45%,#fffaf0 65%,transparent 75%)}
+.halo::after{content:"";position:absolute;z-index:0;inset:-9%;border-radius:50%;background:radial-gradient(circle closest-side,transparent 58%,rgb(var(--ambient) / .05) 65%,rgb(var(--ambient) / .2) 71%,rgb(var(--ambient) / .5) 77%,rgb(var(--ambient) / .38) 81%,rgb(var(--ambient) / .12) 88%,transparent 100%);filter:blur(.65cqw);opacity:.3;animation:innerBreath 7s ease-in-out infinite;pointer-events:none}
+.ring{position:absolute;z-index:1;inset:4%;border:.5px solid rgb(var(--ambient) / .12);border-radius:50%}
+.ring::before,.ring::after{content:none}
+.orbit{position:absolute;z-index:1;inset:4%;border-radius:50%;border:1.4px solid transparent;border-top-color:#ac8650;opacity:0}
+.icon{position:absolute;z-index:3;inset:26%;display:flex;align-items:center;justify-content:center;color:#aa895c;opacity:0;transform:scale(.91);transition:opacity .32s ease,transform .45s ease}
+.icon svg{width:100%;height:100%;overflow:visible}
+.icon.active{opacity:1;transform:scale(1)}
+.menu-preview{position:absolute;z-index:2;inset:6%;border-radius:50%;overflow:hidden;clip-path:circle(50%);opacity:0;transform:scale(.98);transition:opacity .45s ease,transform .6s ease;pointer-events:none}
+.menu-preview img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:50%}
+/* Keep the plate centered within the same circular viewport as every other image. */
+.menu-preview img[src="assets/roasted-vegetables.png"]{object-position:50% 48.4%}
+[data-state="speaking"][data-item-ready="true"] .menu-preview{opacity:1;transform:scale(1)}
+[data-state="speaking"][data-item-ready="true"] .wave{opacity:0}
+/* Image focus layout; normal geometry returns when the preview is cleared. */
+.brand{transition:top .6s cubic-bezier(.22,.7,.2,1)}
+.brand-name{transition:font-size .6s ease,letter-spacing .6s ease}
+.brand-tagline{transition:opacity .2s ease,visibility .2s ease}
+.halo{transition:width .6s cubic-bezier(.22,.7,.2,1),top .6s cubic-bezier(.22,.7,.2,1)}
+[data-state="speaking"][data-item-ready="true"] .halo{width:64%;top:43%}
+[data-state="speaking"][data-item-ready="true"] .brand{top:7.5%}
+[data-state="speaking"][data-item-ready="true"] .brand-name{font-size:3.3cqw;letter-spacing:.85cqw}
+[data-state="speaking"][data-item-ready="true"] .brand-tagline{opacity:0;visibility:hidden}
+[data-state="speaking"][data-item-ready="true"] #caption .caption-arc{font-size:32px}
+[data-state="speaking"][data-item-ready="true"] .status .caption-arc{font-size:16px;letter-spacing:1.8px}
+.leaf{inset:28%;color:#a7885c}
+.mic{inset:34%}
+[data-state="listening"] .ring{animation:ringListen 2s ease-in-out infinite}
+[data-state="listening"] .mic{animation:listen 1.6s ease-in-out infinite}
+@keyframes ringListen{50%{transform:scale(1.035)}}
+@keyframes listen{50%{opacity:.68;transform:scale(.97)}}
+.dots{gap:1.6cqw}.dots i{display:block;width:1.55cqw;height:1.55cqw;border-radius:50%;background:#ac8a58}
+.wave{gap:1.05cqw}.wave i{display:block;width:.8cqw;height:7cqw;border-radius:1cqw;background:linear-gradient(#ceb789,#a48658);transform:scaleY(.4)}
+.wave i:nth-child(2),.wave i:nth-child(6){height:10cqw}.wave i:nth-child(3),.wave i:nth-child(5){height:13cqw}.wave i:nth-child(4){height:15cqw}
+[data-state="thinking"] .orbit{opacity:.75;animation:spin 2.2s linear infinite}
+[data-state="thinking"] .dots i{animation:dot 1.3s ease-in-out infinite}
+.dots i:nth-child(2){animation-delay:.16s}.dots i:nth-child(3){animation-delay:.32s}
+[data-state="speaking"] .wave i{animation:wave 1.05s ease-in-out infinite alternate}
+.wave i:nth-child(2){animation-delay:-.2s!important}.wave i:nth-child(3){animation-delay:-.6s!important}.wave i:nth-child(4){animation-delay:-.35s!important}.wave i:nth-child(5){animation-delay:-.8s!important}.wave i:nth-child(6){animation-delay:-.45s!important}.wave i:nth-child(7){animation-delay:-.15s!important}
+/* All copy follows concentric arcs around the center ring. */
+.copy{position:absolute;inset:0;pointer-events:none;text-align:center}
+#caption,.status{position:absolute;inset:0;margin:0;width:100%;height:100%}
+.caption-arc{display:block;width:100%;height:100%;overflow:visible;fill:var(--ink);font-family:Georgia,'Times New Roman',serif;font-size:36px;font-weight:400}
+.status .caption-arc{font-family:Arial,Helvetica,sans-serif;font-size:18px;letter-spacing:2.2px;fill:#8c775b;text-transform:uppercase}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#caption.fade{animation:captionIn .48s ease both}
+.page-dots{position:absolute;left:0;right:0;top:78%;display:flex;gap:.85cqw;justify-content:center;margin-top:1.5cqw;min-height:.5cqw}
+.page-dots b{width:.46cqw;height:.46cqw;background:#b9a07a;border-radius:50%;opacity:.27}.page-dots b.current{opacity:1}
+.touch-cue{position:absolute;left:50%;bottom:5.4%;width:3cqw;height:1px;background:#b2976c80;transform:translateX(-50%)}
+#ripple{position:absolute;border:1px solid #ae875673;width:8%;height:8%;margin:-4% 0 0 -4%;border-radius:50%;opacity:0;pointer-events:none}
+#ripple.show{animation:ripple .8s ease-out}
+@keyframes innerBreath{0%,100%{opacity:.18}50%{opacity:.3}}
+@keyframes ambientBreath{0%,100%{opacity:.58}50%{opacity:.95}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes dot{50%{transform:translateY(-1cqw);opacity:.45}}
+@keyframes wave{to{transform:scaleY(1)}}
+@keyframes captionIn{from{opacity:0;translate:0 .7cqw}to{opacity:1;translate:0 0}}
+@keyframes ripple{from{opacity:.7;scale:.4}to{opacity:0;scale:2}}
+dialog{position:fixed;margin:auto;width:min(480px,92vw);max-height:90dvh;overflow:auto;border:1px solid #bca780;border-radius:18px;padding:24px;background:#faf6ed;color:#4c4133;box-shadow:0 20px 100px #0008;font-size:14px}
+dialog::backdrop{background:#0009}dialog h2{font:27px Georgia,serif;margin:0 0 8px}dialog p{line-height:1.5;color:#716552}dialog label{display:block;margin-top:18px;margin-bottom:8px;font-weight:600}.controls{display:flex;flex-wrap:wrap;gap:8px}dialog button{background:#fffaf1;border:1px solid #caba9e;border-radius:8px;padding:10px 13px;color:#544432;min-height:42px}dialog button.primary{background:#776045;color:#fff;border-color:#776045}dialog button:focus-visible{outline:2px solid #685235;outline-offset:2px}dialog select,dialog input[type="text"]{width:100%;border:1px solid #caba9e;border-radius:8px;padding:10px;background:#fffdf8;color:#4c4133}dialog input[type="checkbox"]{margin-right:8px}#heard{font-size:13px;overflow-wrap:anywhere}dialog textarea{width:100%;height:90px;padding:10px;border:1px solid #caba9e;border-radius:8px;resize:vertical;background:#fffdf8;color:#4c4133;user-select:text}dialog small{display:block;margin-top:16px;line-height:1.5;color:#7f705c}.close{float:right;font-size:19px;padding:4px 12px!important}#notice{min-height:20px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.wave i:nth-child(2n){transform:scaleY(.8)}}
+
+/* Continuous glossy surface; the original inner ring and edge remain seamless. */
+:root{--ink:#594633}
+#orientation{z-index:1}
+.brand-name{color:#8b6b42;text-shadow:0 1px 0 #fff,0 -1px 0 #73512c22}
+.brand-tagline{color:#8b7559;text-shadow:0 1px 0 #fff9}
+.icon{filter:drop-shadow(0 .2cqw .15cqw #8b68342e) drop-shadow(0 -.12cqw .08cqw #fff);color:#a1814f}
+.leaf{color:#a3824d}
+.dots i,.wave i{background:linear-gradient(100deg,#e3cca0,#b3925e 55%,#92703f);box-shadow:inset .12cqw 0 .15cqw #fff5,0 .2cqw .3cqw #84623825}
+.caption-arc{text-shadow:0 1px 0 #fff9}
+.status .caption-arc{fill:#806c51}
+.page-dots b{background:linear-gradient(#d8bf93,#a88650);box-shadow:0 1px 1px #fff,inset 0 1px 1px #72532933}
+.page-dots b.current{box-shadow:0 0 .65cqw #c3a06666,0 1px 1px #fff}
+.touch-cue{height:.45cqw;width:4.5cqw;border-radius:1cqw;background:linear-gradient(#b29b75,#d8c7a8);box-shadow:0 1px 0 #fff9,inset 0 1px 1px #74552d26}
+dialog{background:linear-gradient(145deg,#fffdf7,#f1e7d5);border-color:#c4ac82;box-shadow:inset 0 1px 0 #fff,0 24px 80px #0007}
+dialog button{background:linear-gradient(#fffdf7,#eee1c9);box-shadow:inset 0 1px 0 #fff,0 2px 4px #75582b15;transition:box-shadow .15s,background .15s}
+dialog button:active{background:#e9d9bc;box-shadow:inset 0 2px 4px #75582b25}
+dialog button.primary{background:linear-gradient(#92754e,#6e5434);box-shadow:inset 0 1px 0 #c6ab83,0 2px 4px #75582b25}
+
+
+/* Broad reflected light beneath all content, with no rim or separate panel. */
+#screen::before{
+ content:"";position:absolute;z-index:0;inset:-18%;border-radius:50%;
+ background:radial-gradient(ellipse at 38% 68%,#ffffffb3 0%,#ffffff59 20%,transparent 48%),radial-gradient(ellipse at 70% 30%,#e5cc9c24 0%,transparent 46%),linear-gradient(120deg,transparent 24%,#ffffff52 43%,#ffffff80 49%,#ffffff24 56%,transparent 72%);
+ pointer-events:none;transform-origin:50% 50%;animation:surfaceDrift 24s ease-in-out infinite;
+}
+#orientation{z-index:1}
+@keyframes surfaceDrift{
+ 0%,100%{transform:translate(-2%,1%) rotate(-7deg);opacity:.65}
+ 50%{transform:translate(2%,-1%) rotate(7deg);opacity:.95}
+}
+@media(prefers-reduced-motion:reduce){#screen::before{animation:none;transform:none;opacity:.75}}
+
+</style>
+</head>
+<body>
+<main id="screen" data-state="idle" tabindex="0" role="group" aria-label="GAIA. Touch to begin a simulated conversation. Press D for demo controls.">
+  <div id="orientation">
+    <div class="brand"><span class="brand-name">GAIA</span><span class="brand-tagline">A new dining experience</span></div>
+    <div class="halo" aria-hidden="true">
+      <div class="ring"></div><div class="orbit"></div>
+      <div class="menu-preview"><img id="menu-image" alt="" decoding="async"></div>
+      <div class="icon leaf active" data-icon="idle"><svg viewBox="0 0 100 100"><path fill="currentColor" d="M48 62C25 62 13 45 12 24c21 2 38 13 36 38Z"/><path fill="currentColor" d="M52 55C51 31 69 17 90 14c-2 22-15 40-38 41Z"/><path d="M49 82c1-20 5-35 22-49M49 69C43 55 34 43 24 35" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="icon mic" data-icon="listening"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><rect x="38" y="15" width="24" height="46" rx="12"/><path d="M25 48v6a25 25 0 0 0 50 0v-6M50 79v12M38 91h24"/></svg></div>
+      <div class="icon dots" data-icon="thinking"><i></i><i></i><i></i></div>
+      <div class="icon wave" data-icon="speaking"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="icon" data-icon="complete"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m27 52 16 16 32-37"/></svg></div>
+      <div class="icon" data-icon="unavailable"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M35 34v32M65 34v32"/></svg></div>
+    </div>
+    <section class="copy" aria-live="polite" aria-atomic="true"><p id="caption">How may I<br>help you?</p><div id="status" class="status">Touch to begin</div><div id="pages" class="page-dots" aria-hidden="true"></div></section>
+    <div class="touch-cue" aria-hidden="true"></div>
+  </div>
+  <div id="ripple" aria-hidden="true"></div>
+</main>
+<dialog id="panel" aria-labelledby="panel-title">
+  <button class="close" id="close" aria-label="Close demo controls">×</button><h2 id="panel-title">GAIA studio</h2>
+  <p>Visual demo · tap to explore, play a simulation, or type a request. Responses follow the sample menu; no AI service or ordering system is connected. Food and drink images are AI-generated concept previews.</p>
+  <div class="controls"><button class="primary" id="play">Play simulation</button><button id="reset">Reset to front</button><button id="fullscreen">Full screen</button></div>
+  <label for="request">Type your request</label><input id="request" type="text" maxlength="300" placeholder="Can you recommend something light?">
+  <div class="controls" style="margin-top:8px"><button id="request-send">Ask GAIA</button></div><p id="heard" role="status"></p>
+  <label>Preview a state</label><div class="controls" id="states"><button data-preview="idle">Idle</button><button data-preview="listening">Listening</button><button data-preview="thinking">Thinking</button><button data-preview="speaking">Speaking</button><button data-preview="complete">Complete</button><button data-preview="unavailable">Unavailable</button></div>
+  <label>Preview a recommendation</label><div class="controls" id="recommendations"><button data-demo="1">Roasted vegetables</button><button data-demo="2">Still &amp; sparkling water</button></div>
+  <label>Face a diner</label><div class="controls" id="directions"><button data-angle="0">Front</button><button data-angle="-90">Right</button><button data-angle="180">Back</button><button data-angle="90">Left</button></div>
+  <label for="custom">Try your own agent response</label><textarea id="custom" maxlength="1200" placeholder="Welcome. What can I help you with this evening?"></textarea>
+  <div class="controls" style="margin-top:8px"><button id="custom-play">Preview response</button></div>
+  <p id="notice" role="status"></p>
+  <small>D: controls · F: full screen · R: reset · Space: start.<br>Touch anywhere inside the circle to face that position. Touch during a response to restart the simulation. Press Escape to stop the simulation. The name, icon, and captions turn together toward every touch. Only an exact center touch keeps the current direction.<br><br>On touch-only displays, hold the center for 1.2 seconds to open these controls.<br>Provisional square canvas, circular mask. This is not a calibrated five-inch physical size. The exact display resolution and touch mapping will be set when the screen model is available.</small>
+</dialog>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),screen=$('screen'),panel=$('panel'),orientation=$('orientation'),caption=$('caption'),status=$('status'),pages=$('pages');
+const icons=[...document.querySelectorAll('[data-icon]')];
+let state='idle',angle=0,timers=[],exampleIndex=0,press=null,holdTimer=null;
+const samples=[
+ ['Welcome. It’s lovely to have you here.','I can guide you through the menu.','What are you in the mood for?'],
+ [{text:'For something light, try the roasted vegetables.',item:'vegetables'},{text:'They’re served with lemon and fresh herbs.',item:'vegetables'},'Would you like to hear another option?'],
+ [{text:'Of course. Still or sparkling water?',item:'water'},'You can also ask me about the drinks menu.']
+];
+const menuItems={
+ vegetables:{src:'assets/roasted-vegetables.png',alt:'Roasted vegetables on an ivory plate with lemon and fresh herbs'},
+ water:{src:'assets/water-selection.png',alt:'Still and sparkling water in two chilled glasses'}
+};
+const menuImage=$('menu-image');let previewKey=null,currentCaption='';
+// All previews share a circular viewport; object-fit handles image proportions.
+function updatePreview(item){
+ previewKey=state==='speaking'&&menuItems[item]?item:null;
+ screen.dataset.itemReady='false';
+ if(!previewKey)return;
+ const key=previewKey,entry=menuItems[key];
+ const ready=()=>{
+  if(previewKey!==key||state!=='speaking'||!menuImage.complete)return;
+  if(!(menuImage.naturalWidth>0&&menuImage.naturalHeight>0))return;
+  screen.dataset.itemReady='true';setCaption(currentCaption);
+ };
+ menuImage.onload=ready;
+ menuImage.onerror=()=>{if(previewKey===key){screen.dataset.itemReady='false';setCaption(currentCaption)}};
+ menuImage.alt=entry.alt;
+ if(menuImage.getAttribute('src')!==entry.src)menuImage.src=entry.src;
+ ready();
+}
+// Visual-only mode: captions advance on a reading timer; no audio or microphone APIs.
+let flowId=0,hasGreeted=false;
+function cancelFlow(){flowId++;clearTimers()}
+function say(text,done=()=>{},token=flowId){
+ const duration=Math.max(1600,text.trim().split(/\s+/).length*420+400);
+ after(()=>{if(token===flowId)done()},duration);
+}
+function announce(next,text,item,done,token=flowId){if(token!==flowId)return;setState(next,text,item);say(text||messages[next][0],done,token)}
+function responseFor(text){
+ const q=text.toLowerCase();
+ if(/allerg|gluten|nut.free|dairy.free/.test(q))return ['Please check ingredients and allergies with your server.','This demo cannot confirm that a dish is safe for you.'];
+ if(/water|drink|thirst|sparkling|still water/.test(q))return samples[2];
+ if(/food|eat|hungry|recommend|vegetable|light|menu|dinner|lunch/.test(q))return samples[1];
+ if(/order|bring|serve|waiter|bill|pay/.test(q))return ['I can preview our food and drinks.','This demo cannot place orders or call a server.'];
+ if(/thank/.test(q))return ['You’re very welcome.'];
+ if(/hello|hi\b|hey/.test(q))return samples[0];
+ return ['I can show you roasted vegetables or our water selection.','What would you like to explore?'];
+}
+function respond(text){
+ cancelFlow();$('heard').textContent='Your request: '+text;const token=flowId;
+ announce('thinking',null,null,()=>speak(responseFor(text)),token);
+}
+const messages={idle:['How may I\nhelp you?','Touch to begin'],listening:['I’m listening.','Go ahead'],thinking:['One moment.','Thinking'],speaking:['It’s lovely to have you here.','GAIA is speaking'],complete:['Anything else?','Touch to continue'],unavailable:['A moment, please.','Touch to try again']};
+function clearTimers(){timers.forEach(clearTimeout);timers=[]}
+function after(fn,ms){timers.push(setTimeout(fn,ms))}
+const measure=document.createElement('canvas').getContext('2d');
+function captionLines(text,preview=false){
+ measure.font=preview?'32px Georgia':'36px Georgia';
+ const maxWidth=preview?500:420;
+ const lines=[];let line='';
+ for(const word of text.trim().split(/\s+/)){
+  const candidate=line?line+' '+word:word;
+  if(measure.measureText(candidate).width<=maxWidth){line=candidate;continue}
+  if(line){lines.push(line);line=''}
+  for(const char of Array.from(word)){
+   if(line&&measure.measureText(line+char).width>maxWidth){lines.push(line);line=''}
+   line+=char;
+  }
+ }
+ if(line)lines.push(line);return lines;
+}
+function renderArcs(target,lines,firstRadius,centerY=470,lineSpacing=46){
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
+ svg.setAttribute('viewBox','0 0 1000 1000');svg.setAttribute('class','caption-arc');svg.setAttribute('aria-hidden','true');
+ const defs=document.createElementNS(ns,'defs');svg.append(defs);
+ lines.forEach((line,i)=>{
+  const radius=firstRadius+i*lineSpacing,id=target.id+'-curve-'+i,halfAngle=Math.PI/3;
+  const dx=radius*Math.sin(halfAngle),y=centerY+radius*Math.cos(halfAngle);
+  const path=document.createElementNS(ns,'path');path.id=id;
+  // True lower circular arc, concentric with the central ring: a visible smile.
+  path.setAttribute('d',`M ${500-dx} ${y} A ${radius} ${radius} 0 0 0 ${500+dx} ${y}`);defs.append(path);
+  const label=document.createElementNS(ns,'text'),along=document.createElementNS(ns,'textPath');
+  along.setAttribute('href','#'+id);along.setAttribute('startOffset','50%');along.setAttribute('text-anchor','middle');along.textContent=line;label.append(along);svg.append(label);
+ });
+ const accessible=document.createElement('span');accessible.className='sr-only';accessible.textContent=lines.join(' ');
+ target.replaceChildren(accessible,svg);
+}
+function setCaption(text){
+ currentCaption=text;
+ const preview=state==='speaking'&&screen.dataset.itemReady==='true';
+ const lines=captionLines(text,preview);
+ // Keep the copy in the open band below the ring in either layout.
+ const centerY=preview?430:470,textBandCenter=preview?400:350;
+ const lineSpacing=preview?42:46,statusGap=preview?44:48,captionHeight=preview?32:36;
+ const firstRadius=textBandCenter-((lines.length-1)*lineSpacing+statusGap-captionHeight)/2;
+ renderArcs(caption,lines,firstRadius,centerY,lineSpacing);
+ const statusRadius=firstRadius+(lines.length-1)*lineSpacing+statusGap;
+ renderArcs(status,[messages[state][1]],statusRadius,centerY,lineSpacing);
+ pages.style.top=((centerY+statusRadius+27)/10)+'%';
+ caption.classList.remove('fade');void caption.offsetWidth;caption.classList.add('fade');
+}
+function setState(next,text,item=null){state=next;updatePreview(item);screen.dataset.state=next;icons.forEach(el=>el.classList.toggle('active',el.dataset.icon===next));setCaption(text||messages[next][0]);pages.replaceChildren();screen.setAttribute('aria-label','GAIA: '+next+'. '+(text||messages[next][0])+'. Touch to interact. Press D for demo controls.')}
+function face(target){let delta=((target-angle+180)%360+360)%360-180;angle+=delta;orientation.style.transform='rotate('+angle+'deg)'}
+function showPages(index,count){pages.replaceChildren();if(count>1)for(let i=0;i<count;i++){let dot=document.createElement('b');dot.className=i===index?'current':'';pages.append(dot)}}
+function speak(chunks){
+ cancelFlow();const token=flowId;
+ chunks=chunks.flatMap(entry=>{
+  const segment=typeof entry==='string'?{text:entry,item:null}:entry;
+  const preview=!!menuItems[segment.item],limit=preview?2:3;
+  const lines=captionLines(segment.text,preview),result=[];
+  for(let i=0;i<lines.length;i+=limit)result.push({text:lines.slice(i,i+limit).join(' '),item:segment.item});
+  return result;
+ });
+ let index=0;
+ function next(){
+  if(token!==flowId)return;
+  if(index===chunks.length){announce('complete',null,null,()=>{},token);return}
+  const segment=chunks[index];setState('speaking',segment.text,segment.item);showPages(index,chunks.length);index++;
+  say(segment.text,next,token);
+ }
+ next();
+}
+function start(){
+ cancelFlow();const token=flowId;
+ const begin=()=>announce('listening',null,null,()=>announce('thinking',null,null,()=>speak(samples[exampleIndex++%samples.length]),token),token);
+ if(!hasGreeted){hasGreeted=true;announce('idle',null,null,begin,token)}else begin();
+}
+function reset(){cancelFlow();face(0);setState('idle')}
+function openPanel(){cancelFlow();setState('idle');if(!panel.open)panel.showModal()}
+function closePanel(){panel.close();screen.focus({preventScroll:true})}
+function chunkText(text){const words=text.trim().split(/\s+/),chunks=[];let current='';for(const original of words){const parts=original.match(/.{1,22}/gu)||[];for(const word of parts){if(current&&(current+' '+word).length> fiftyEight){chunks.push(current);current=''}current+=(current?' ':'')+word}}if(current)chunks.push(current);return chunks}
+const fiftyEight=58;
+function faceTouch(x,y){const box=screen.getBoundingClientRect(),dx=x-box.left-box.width/2,dy=y-box.top-box.height/2,r=box.width/2;if(Math.hypot(dx,dy)>r)return false;if(dx!==0||dy!==0)face(Math.atan2(-dx,dy)*180/Math.PI);return true}
+function touchAt(x,y){const box=screen.getBoundingClientRect(),dx=x-box.left-box.width/2,dy=y-box.top-box.height/2,r=box.width/2;if(Math.hypot(dx,dy)>r)return;faceTouch(x,y);const ripple=$('ripple');ripple.style.left=((x-box.left)/box.width*100)+'%';ripple.style.top=((y-box.top)/box.height*100)+'%';ripple.classList.remove('show');void ripple.offsetWidth;ripple.classList.add('show');if(['idle','complete','unavailable','speaking'].includes(state))start()}
+screen.addEventListener('pointerdown',e=>{if(e.button!==0||!e.isPrimary)return;const box=screen.getBoundingClientRect(),distance=Math.hypot(e.clientX-box.left-box.width/2,e.clientY-box.top-box.height/2);if(distance>box.width/2)return;faceTouch(e.clientX,e.clientY);press={id:e.pointerId,x:e.clientX,y:e.clientY,held:false};screen.setPointerCapture(e.pointerId);if(distance<box.width*.16)holdTimer=setTimeout(()=>{if(press){press.held=true;openPanel()}},1200)});
+screen.addEventListener('pointermove',e=>{if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>15)clearTimeout(holdTimer)});
+screen.addEventListener('pointerup',e=>{clearTimeout(holdTimer);if(!press||press.id!==e.pointerId)return;let p=press;press=null;if(!p.held&&Math.hypot(e.clientX-p.x,e.clientY-p.y)<30)touchAt(p.x,p.y)});
+screen.addEventListener('pointercancel',()=>{clearTimeout(holdTimer);press=null});
+$('close').onclick=closePanel;$('play').onclick=()=>{closePanel();start()};$('reset').onclick=()=>{closePanel();reset()};
+$('states').onclick=e=>{const mode=e.target.dataset.preview;if(mode){cancelFlow();closePanel();announce(mode)}};
+$('recommendations').onclick=e=>{const index=e.target.dataset.demo;if(index!==undefined){closePanel();speak(samples[Number(index)])}};
+$('directions').onclick=e=>{if(e.target.dataset.angle!==undefined){face(Number(e.target.dataset.angle));closePanel()}};
+$('custom-play').onclick=()=>{const text=$('custom').value.trim();if(!text){$('notice').textContent='Enter a response to preview.';return}closePanel();speak(chunkText(text))};
+async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();if(panel.open)closePanel()}catch(e){$('notice').textContent='Use your browser’s full-screen option (usually F11).';if(!panel.open)openPanel()}}
+$('fullscreen').onclick=fullscreen;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){cancelFlow();setState('idle');return}if(e.target.matches('textarea,input,select'))return;if(e.target.closest('button')&&(e.key===' '||e.key==='Enter'))return;const key=e.key.toLowerCase();if(key==='d'){e.preventDefault();panel.open?closePanel():openPanel()}else if(!panel.open){if(key==='f')fullscreen();else if(key==='r')reset();else if(key===' '||key==='enter'){e.preventDefault();start()}}});
+panel.addEventListener('click',e=>{if(e.target===panel){const b=panel.getBoundingClientRect();if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)closePanel()}});
+$('request-send').onclick=()=>{const text=$('request').value.trim();if(!text){$('heard').textContent='Type a request first.';return}closePanel();respond(text)};
+$('request').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('request-send').click()}});
+window.addEventListener('pagehide',cancelFlow);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelFlow();setState('idle')}});
+setState('idle');if(new URLSearchParams(location.search).has('controls'))openPanel();
+})();
+</script>
+</body>
+</html>
